@@ -1,13 +1,19 @@
 import std.file;
 import std.stdio;
 import std.string;
+import transform;
 import derelict.opengl3.gl3;
+import gl3n.linalg;
+import camera;
 
 class Shader {
 	private uint program;
 	
 	private uint vertexShader;
 	private uint fragmentShader;
+	
+	private int transformUniform;
+	private int worldUniform;
 	
 	static int NULL = 0;
 	
@@ -27,7 +33,17 @@ class Shader {
 		checkForShaderError(program, GL_LINK_STATUS, true, "Error; Program linking failed!"); 
 		
 		glValidateProgram(program);
-		checkForShaderError(program, GL_VALIDATE_STATUS, true, "Error; Program validation failed!"); 
+		checkForShaderError(program, GL_VALIDATE_STATUS, true, "Error; Program validation failed!");
+		
+		transformUniform = glGetUniformLocation(program, "transform");
+		worldUniform = glGetUniformLocation(program, "world");
+	}
+	
+	void update(Transform transform, Camera camera) {
+		mat4 model = transform.getModel();
+		glUniformMatrix4fv(transformUniform, 1, GL_TRUE, model.value_ptr);
+		mat4 world = camera.getViewProjection();
+		glUniformMatrix4fv(worldUniform, 1, GL_TRUE, world.value_ptr);
 	}
 	
 	void bind() {

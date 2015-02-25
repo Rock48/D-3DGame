@@ -3,6 +3,10 @@ import derelict.sdl2.image;
 import derelict.opengl3.gl3;
 import std.string;
 import std.stdio;
+import app;
+
+int mouseX = 0;
+int mouseY = 0;
 
 class Display {
 	SDL_Window* window;
@@ -52,6 +56,21 @@ class Display {
 		while(SDL_PollEvent(&e)) {
 			if(e.type == SDL_QUIT) {
 				wasClosed = true;
+			}
+			if(e.type == SDL_KEYDOWN) {
+				keyDown(e.key.keysym.sym);
+			}
+			if(e.type == SDL_KEYUP) {
+				keyUp(e.key.keysym.sym);
+			}
+			if(e.type == SDL_MOUSEMOTION) {
+				auto relx = e.motion.xrel;
+				auto rely = e.motion.yrel;
+				
+				mouseX = e.motion.x;
+				mouseY = e.motion.y;
+				
+				mouseMoved(relx, rely);
 			}
 		}
 	}
