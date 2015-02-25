@@ -2,18 +2,37 @@ import texture;
 import mesh;
 import gl3n.linalg;
 import std.stdio;
+import std.datetime;
+import noise.mod.perlin;
 
 class Terrain {
-	private ubyte width;
+	private uint width;
 	
 	Mesh mesh;
 	
 	float[] heightmap;
 	
-	this(float[] heightmap, ubyte width) {
+	this(float[] heightmap, uint width) {
 		this.width = width;
 		this.heightmap = heightmap;
 		this.mesh = generateTerrain();
+	}
+	
+	public static Terrain generateTerrain(uint width) {
+		float hm[];
+		hm.length = width*width;
+		
+		Perlin perl = new Perlin();
+		
+		perl.SetSeed(cast(int)Clock.currSystemTick().msecs());
+		
+		for(uint i=0; i<width; i++) {
+			for(uint j=0; j<width; j++) {
+				hm[i + width*j] = 10 * cast(float)perl.GetValue(cast(double)i/100.0,0,cast(double)j/100.0);
+			}
+		}
+		
+		return new Terrain(hm, width);
 	}
 	
 	private Mesh generateTerrain() {
@@ -57,9 +76,6 @@ class Terrain {
 				indices[pointer++] = bottomRight;
 			}
 		}
-		
-		vertices.writeln;
-		indices.writeln;
 		
 		return new Mesh(vertices, indices);
 	}

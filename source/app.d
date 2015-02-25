@@ -30,8 +30,10 @@ Transform transf2;
 Texture bricks2;
 
 Texture grass;
+Texture water;
 
 Terrain terr;
+Terrain wtr;
 
 void main() {
 	DerelictSDL2.load();
@@ -68,12 +70,12 @@ void load() {
 //					   1, 2, 3];
 //	mesh1 = new Mesh(vertices, indices);
 //	
-//	Vertex planeVertices[] = [ Vertex(vec3(-10,0,-10), vec2(0,0)),
-//	 						 Vertex(vec3(-10,0,10), vec2(0,1)),
-//	 						 Vertex(vec3(10,0,10), vec2(1,1)),
-//	 						 Vertex(vec3(10,0,-10), vec2(1,0))];
-//	uint planeIndices[] = [ 0,1,3, 1, 3, 2 ];
-//	ground = new Mesh(planeVertices, planeIndices);
+	Vertex planeVertices[] = [ Vertex(vec3(-10,0,-10), vec2(0,0)),
+	 						 Vertex(vec3(-10,0,10), vec2(0,1)),
+	 						 Vertex(vec3(10,0,10), vec2(1,1)),
+	 						 Vertex(vec3(10,0,-10), vec2(1,0))];
+	uint planeIndices[] = [ 0,1,3, 1, 3, 2 ];
+	ground = new Mesh(planeVertices, planeIndices);
 	
 	basicShader = new Shader("shaders/basic");
 //	bricks = new Texture("textures/bricks.png");
@@ -92,16 +94,18 @@ void load() {
 	
 	cam1 = new Camera(vec3(0,1,-3), 70.0f, WIDTH, HEIGHT, 0.01, 1000);
 	
-	float heightmap[7*7] = [ .3,  0, .3, .6, .3,  0, .3,
-							  0, .3,  0, .3,  0, .3, .6,
-							 .3, .3, .3,  0, .6, .3, .3,
-							 .6,  1, .6, .3, .6, .6, .6,
-							 .3,  0, .3, .6, .3,  0, .3,
-							  0, .3,  0, .3,  0, .3, .6,
-							 .3, .3, .3,  0, .6, .3, .3];
+	float heightmap[255*255];
+
+	for(uint i=0; i<255; i++) {
+		for(uint j=0; j<255; j++) {
+			heightmap[i + 255*j] = -2;
+		}
+	}
 	
+	wtr = new Terrain(heightmap, 255);
+	terr = Terrain.generateTerrain(255);//new Terrain(heightmap, 7);
 	
-	terr = new Terrain(heightmap, 7);
+	water = new Texture("textures/water.png");
 	
 	SDL_ShowCursor(SDL_DISABLE);
 	SDL_SetWindowGrab(window.window, SDL_TRUE);
@@ -133,6 +137,8 @@ void render() {
 	basicShader.update(transf,cam1);
 	grass.bind(0);
 	terr.mesh.draw();
+	water.bind(0);
+	wtr.mesh.draw();
 //	
 //	basicShader.update(transf, cam1);
 //	bricks.bind(0);
@@ -162,6 +168,8 @@ void keyDown(SDL_Keycode key) {
 	}
 }
 
+bool wireframe;
+
 void keyUp(SDL_Keycode key) {
 	if(key == SDL_GetKeyFromName("w")) {
 		forward = false;
@@ -174,6 +182,15 @@ void keyUp(SDL_Keycode key) {
 	}
 	if(key == SDL_GetKeyFromName("d")) {
 		right = false;
+	}
+	
+	if(key == SDL_GetKeyFromName("f1")) {
+		wireframe = !wireframe;
+		if(wireframe) {
+			glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+		} else {
+			glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+		}
 	}
 }
 

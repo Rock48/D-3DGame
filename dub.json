@@ -4,9 +4,10 @@
 	"copyright": "Copyright 2015, Charlie Quigley",
 	"authors": ["Charlie Quigley"],
 	"dependencies": {
-		"derelict-sdl2":"~>1.9.2",
-		"derelict-gl3":">=1.0.12",
-		"gl3n": "~>1.0.1"
+		"derelict-sdl2": "~>1.9.2",
+		"derelict-gl3": ">=1.0.12",
+		"gl3n": "~>1.0.1",
+		"libnoise-d": "~>1.0.1"
 	},
 	"lflags": ["-L/SUBSYSTEM:WINDOWS"]
 }
