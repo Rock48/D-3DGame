@@ -17,8 +17,6 @@ class Texture {
 		
 		ubyte* apple = cast(ubyte*)image.pixels;
 		
-		writeln(image.format.Amask);
-		
 		glGenTextures(1, &texture);
 		
 		glTextureParameteriEXT(texture, GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);

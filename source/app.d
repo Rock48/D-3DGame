@@ -10,6 +10,7 @@ import gl3n.linalg;
 import transform;
 import camera;
 import terrain;
+import std.datetime;
 
 Display window;
 Mesh mesh1;
@@ -18,8 +19,8 @@ Shader basicShader;
 Texture bricks;
 Camera cam1;
 
-int WIDTH = 1280;
-int HEIGHT = 720;
+int WIDTH = 1440;
+int HEIGHT = 900;
 
 bool forward, backward, left, right;
 
@@ -32,8 +33,12 @@ Texture bricks2;
 Texture grass;
 Texture water;
 
+Texture sand;
+
 Terrain terr;
 Terrain wtr;
+
+Shader terrainShader;
 
 void main() {
 	DerelictSDL2.load();
@@ -47,81 +52,89 @@ void main() {
 	writeln("SDL initialized successfully!");
 	
 	glEnable(GL_DEPTH_TEST);
+	writeln("enabled depth testing");
 	
 	DerelictGL3.reload();
+	writeln("finished initializing opengl");
 	load();
 	
+	long curtime = 0;
+	long oldtime = 0;
+	float dt;
+	
+	glEnable(GL_CULL_FACE);
+	
 	while(!window.wasClosed) {
+		curtime = Clock.currSystemTick().msecs();
+		dt = (curtime-oldtime)/1000.0f;
+		oldtime = curtime;
 		window.updateWindow();
-		update();
+		update(dt);
 		render();
 	}
 }
 float i = 0;
 void load() {
-	glClearColor(0.0f, 0.15f, 0.3f, 1.0f);
-//	Vertex vertices[] = [ Vertex(vec3(0,0.5,0), vec2(0.5,1)),
-//	 					  Vertex(vec3(-0.5,-0.5,-0.5), vec2(0,0)),
-//	 					  Vertex(vec3(0.5,-0.5,-0.5), vec2(1,0)),
-//	 					  Vertex(vec3(0,-0.5,0.5), vec2(0,0)), ];
-//	uint indices[] = [ 0, 1, 2,
-//					   0, 1, 3,
-//					   0, 2, 3,
-//					   1, 2, 3];
-//	mesh1 = new Mesh(vertices, indices);
-//	
-	Vertex planeVertices[] = [ Vertex(vec3(-10,0,-10), vec2(0,0)),
-	 						 Vertex(vec3(-10,0,10), vec2(0,1)),
-	 						 Vertex(vec3(10,0,10), vec2(1,1)),
-	 						 Vertex(vec3(10,0,-10), vec2(1,0))];
+	glEnable (GL_BLEND);
+	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glClearColor(.5f, 0.7f, 1f, 0f);
+	
+	writeln("clear color set");
+	
+	Vertex planeVertices[] = [ Vertex(vec3(-255/2.0,0,-255/2.0), vec2(0,0), vec3(0,1,0)),
+	 						 Vertex(vec3(-255/2.0,0,255/2.0), vec2(0,100), vec3(0,1,0)),
+	 						 Vertex(vec3(255/2.0,0,255/2.0), vec2(100,100), vec3(0,1,0)),
+	 						 Vertex(vec3(255/2.0,0,-255/2.0), vec2(100,0), vec3(0,1,0))];
 	uint planeIndices[] = [ 0,1,3, 1, 3, 2 ];
-	ground = new Mesh(planeVertices, planeIndices);
+	ground = new Mesh(planeVertices, planeIndices, GL_STATIC_DRAW);
+	
+	
 	
 	basicShader = new Shader("shaders/basic");
-//	bricks = new Texture("textures/bricks.png");
-//	bricks2 = new Texture("textures/bricks2.png");
-//	
-	transf = new Transform();
-//	groundTrans = new Transform();
-//	transf2 = new Transform();
-//	
-//	transf2.pos = vec3(6,0,-6);
-//	transf2.scale = vec3(2,2,2);
+	writeln("initialized basic shader");
+	terrainShader = new TerrainShader("shaders/terrain");
+	writeln("initialized terrain shader");
 	
-//	groundTrans.pos.y = -2;
+	bricks = new Texture("textures/bricks.png");
+	
+	transf = new Transform();
+	groundTrans = new Transform();
+	
+	groundTrans.pos.y = -3;
 	
 	grass = new Texture("textures/grass.png");
+	sand = new Texture("textures/sand.png");
+	writeln("initialized textures");
 	
 	cam1 = new Camera(vec3(0,1,-3), 70.0f, WIDTH, HEIGHT, 0.01, 1000);
+	writeln("initialized camera");
 	
-	float heightmap[255*255];
-
-	for(uint i=0; i<255; i++) {
-		for(uint j=0; j<255; j++) {
-			heightmap[i + 255*j] = -2;
-		}
-	}
-	
-	wtr = new Terrain(heightmap, 255);
-	terr = Terrain.generateTerrain(255);//new Terrain(heightmap, 7);
+	terr = Terrain.generateTerrain(256);//new Terrain(heightmap, 7);
+	wtr = Terrain.generateTerrain(32);
+	groundTrans.scale = vec3(8,1,8);
+	writeln("initialized grass terrain");
 	
 	water = new Texture("textures/water.png");
+	writeln("initialized water texture");
 	
 	SDL_ShowCursor(SDL_DISABLE);
 	SDL_SetWindowGrab(window.window, SDL_TRUE);
 	SDL_SetRelativeMouseMode(true);
 }
 
-void update() {
-//	i+=0.01;
+
+void update(float dt) {
+	i+=dt;
+	wtr.regenerate(i, 1);
 //	transf.rot.y = i;
 //	transf2.rot.y = -i;
+	//groundTrans.pos.y = sin(i)/3-2;
 	
 	if(forward) {
-		cam1.moveForward(0.03);
+		cam1.moveForward(0.05);
 	}
 	if(backward) {
-		cam1.moveForward(-0.03);
+		cam1.moveForward(-0.05);
 	}
 	if(left) {
 		cam1.moveLeft(0.03);
@@ -133,24 +146,16 @@ void update() {
 
 void render() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	basicShader.bind();
-	basicShader.update(transf,cam1);
+	terrainShader.bind();
+	terrainShader.update(transf,cam1,vec4(1,1,1,1));
 	grass.bind(0);
+	sand.bind(1);
 	terr.mesh.draw();
+	basicShader.bind();
+	basicShader.update(groundTrans,cam1,vec4(0.35,0.7,0.6,0.7));
 	water.bind(0);
+	water.bind(1);
 	wtr.mesh.draw();
-//	
-//	basicShader.update(transf, cam1);
-//	bricks.bind(0);
-//	mesh1.draw();
-//	
-//	basicShader.update(transf2, cam1);
-//	mesh1.draw();
-//	
-//	
-//	basicShader.update(groundTrans, cam1);
-//	bricks2.bind(0);
-//	ground.draw();
 }
 
 void keyDown(SDL_Keycode key) {
@@ -171,6 +176,9 @@ void keyDown(SDL_Keycode key) {
 bool wireframe;
 
 void keyUp(SDL_Keycode key) {
+	if(key == SDL_GetKeyFromName("escape")){
+		window.wasClosed = true;
+	}
 	if(key == SDL_GetKeyFromName("w")) {
 		forward = false;
 	}
@@ -197,6 +205,4 @@ void keyUp(SDL_Keycode key) {
 void mouseMoved(int x, int y) {
 	cam1.rotateY(x/400.0);
 	cam1.pitch(-y/400.0);
-	
-	//SDL_SetCursor(WIDTH/2, HEIGHT/2);
 }
