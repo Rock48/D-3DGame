@@ -51,6 +51,7 @@ class Terrain {
 		sph = new Spheres();
 		//sph.SetSeed(cast(int)Clock.currSyste
 		simpl.SetFrequency(0.1);
+		sph.SetFrequency(2);
 		multiply = new Multiply();
 				multiply.SetSourceMod(0, &simpl);
 				multiply.SetSourceMod(1, &sph);
@@ -64,8 +65,10 @@ class Terrain {
 		for(uint i=0; i<width; i++) {
 			for(uint j=0; j<width; j++) {
 				uint index = i + width * j;
-				
-				hm[index] = scale * multiply.GetValue(cast(double)i*6,t/3,cast(double)j*6);
+				float sinRes = sin(i*0.3+j*0.3+t);
+				hm[index] = scale * sin(i*0.3+j*0.3+t);//sph.GetValue(cast(double)i*6,t/3,cast(double)j*6);
+				vertices[i+j*width].pos.x = sinRes;
+				vertices[i+j*width].pos.y = sinRes + 1;
 				if(hm[index] <= -1) {
 					tm[index] = vec4(0,1,0,0);
 				} else {
@@ -88,8 +91,8 @@ class Terrain {
 				} else {
 					texY = 1;
 				}
-				float x = cast(float)i - width/2.0;
-				float y = cast(float)j - width/2.0;
+				float x = (i - vertices[i+j*width].pos.x - width/2) ;
+				float y = (j - vertices[i+j*width].pos.y - width/2) ;
 				
 				float heightL = heightmap[i-1+j*width < 0 || i-1+j*width >= width*width ? (i+j*width) : (i-1+j*width)];
 				float heightR = heightmap[i+1+j*width < 0 || i+1+j*width >= width*width ? (i+j*width) : (i+1+j*width)];

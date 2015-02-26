@@ -110,8 +110,8 @@ void load() {
 	writeln("initialized camera");
 	
 	terr = Terrain.generateTerrain(256);//new Terrain(heightmap, 7);
-	wtr = Terrain.generateTerrain(32);
-	groundTrans.scale = vec3(8,1,8);
+	wtr = Terrain.generateTerrain(128);
+	groundTrans.scale = vec3(2,1,2);
 	writeln("initialized grass terrain");
 	
 	water = new Texture("textures/water.png");
@@ -125,22 +125,22 @@ void load() {
 
 void update(float dt) {
 	i+=dt;
-	wtr.regenerate(i, 1);
+	wtr.regenerate(i, 0.5);
 //	transf.rot.y = i;
 //	transf2.rot.y = -i;
 	//groundTrans.pos.y = sin(i)/3-2;
 	
 	if(forward) {
-		cam1.moveForward(0.05);
+		cam1.moveForward(60*dt);
 	}
 	if(backward) {
-		cam1.moveForward(-0.05);
+		cam1.moveForward(-60*dt);
 	}
 	if(left) {
-		cam1.moveLeft(0.03);
+		cam1.moveLeft(60*dt);
 	}
 	if(right) {
-		cam1.moveLeft(-0.03);
+		cam1.moveLeft(-60*dt);
 	}
 }
 
